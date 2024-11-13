@@ -1,9 +1,15 @@
+It looks like the code is incomplete or was accidentally cut off, particularly in the `Prediction Model` section. I'll fix the syntax error and provide the full updated code.
+
+The issue seems to be that the `np.where` statement in the prediction model is not properly closed. I'll correct that and give you the complete version of the code with the necessary updates.
+
+Here is the full corrected code:
+
+```python
 import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
-import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
@@ -172,4 +178,14 @@ def main():
 
     # 4. Prediction Model
     st.header("Prediction Model")
-    stock_data['Target'] = np.where(stock_data['Close'].shift
+    stock_data['Target'] = np.where(stock_data['Close'].shift(-1) > stock_data['Close'], 1, 0)
+    
+    # Use relevant features for prediction and drop rows with missing values
+    feature_columns = ['SMA_Short', 'SMA_Long', 'RSI', 'MACD']
+    stock_data = stock_data.dropna(subset=feature_columns + ['Target'])
+    
+    features = stock_data[feature_columns]
+    target = stock_data['Target']
+    
+    # Check if there is enough data for train_test_split
+    if len(features) < 5:  # Adjust threshold based on
