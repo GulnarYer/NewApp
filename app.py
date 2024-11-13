@@ -3,11 +3,11 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
-import wikipediaapi
+import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-# Set page configuration (must be the first Streamlit command)
+# Set page configuration
 st.set_page_config(page_title="Stock Analysis Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # Minimalist black theme styling
@@ -48,6 +48,13 @@ def calculate_macd(data):
     ema_12 = data['Close'].ewm(span=12, adjust=False).mean()
     ema_26 = data['Close'].ewm(span=26, adjust=False).mean()
     return ema_12 - ema_26
+
+def calculate_bollinger_bands(data, window=20, num_std_dev=2):
+    sma = data['Close'].rolling(window=window).mean()
+    rolling_std = data['Close'].rolling(window=window).std()
+    upper_band = sma + (rolling_std * num_std_dev)
+    lower_band = sma - (rolling_std * num_std_dev)
+    return upper_band, lower_band
 
 # Caching stock data fetching for 5 years
 @st.cache_data
@@ -121,12 +128,17 @@ def main():
     # 3. Technical Analysis
     st.header("Technical Analysis")
     
-    # Calculate custom SMA, RSI, MACD based on user input
+    # Calculate custom SMA, RSI, MACD, Bollinger Bands based on user input
     stock_data['SMA_Short'] = calculate_sma(stock_data, short_ma_days)
     stock_data['SMA_Long'] = calculate_sma(stock_data, long_ma_days)
     stock_data['RSI'] = calculate_rsi(stock_data, 20)
     stock_data['MACD'] = calculate_macd(stock_data)
-    
+    stock_data['Upper_Band'], stock_data['Lower_Band'] = calculate_bollinger_bands(stock_data)
+
+    # Crossover: Check for SMA crossover
+    stock_data['Crossover'] = np.where(stock_data['SMA_Short'] > stock_data['SMA_Long'], 1, 0)
+    stock_data['Crossover_Signal'] = stock_data['Crossover'].diff()
+
     # Plotting with Plotly
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=stock_data.index, y=stock_data['Close'], mode='lines', name="Close Price"))
@@ -134,41 +146,30 @@ def main():
     fig.add_trace(go.Scatter(x=stock_data.index, y=stock_data['SMA_Long'], mode='lines', name=f"SMA {long_ma_days}"))
     fig.update_layout(title=f"Close Price with SMA {short_ma_days} and SMA {long_ma_days}", template="plotly_dark")
     st.plotly_chart(fig, use_container_width=True)
-    
+
     # RSI
     st.write("### RSI (20)")
     fig_rsi = go.Figure()
     fig_rsi.add_trace(go.Scatter(x=stock_data.index, y=stock_data['RSI'], mode='lines', name="RSI"))
     fig_rsi.update_layout(title="RSI (20)", template="plotly_dark")
     st.plotly_chart(fig_rsi, use_container_width=True)
-    
+
     # MACD
     st.write("### MACD")
     fig_macd = go.Figure()
     fig_macd.add_trace(go.Scatter(x=stock_data.index, y=stock_data['MACD'], mode='lines', name="MACD"))
     fig_macd.update_layout(title="MACD", template="plotly_dark")
     st.plotly_chart(fig_macd, use_container_width=True)
-    
+
+    # Bollinger Bands
+    st.write("### Bollinger Bands")
+    fig_bollinger = go.Figure()
+    fig_bollinger.add_trace(go.Scatter(x=stock_data.index, y=stock_data['Close'], mode='lines', name="Close Price"))
+    fig_bollinger.add_trace(go.Scatter(x=stock_data.index, y=stock_data['Upper_Band'], mode='lines', name="Upper Band", line=dict(dash='dash')))
+    fig_bollinger.add_trace(go.Scatter(x=stock_data.index, y=stock_data['Lower_Band'], mode='lines', name="Lower Band", line=dict(dash='dash')))
+    fig_bollinger.update_layout(title="Bollinger Bands", template="plotly_dark")
+    st.plotly_chart(fig_bollinger, use_container_width=True)
+
     # 4. Prediction Model
     st.header("Prediction Model")
-    stock_data['Target'] = np.where(stock_data['Close'].shift(-1) > stock_data['Close'], 1, 0)
-    
-    # Use relevant features for prediction and drop rows with missing values
-    feature_columns = ['SMA_Short', 'SMA_Long', 'RSI', 'MACD']
-    stock_data = stock_data.dropna(subset=feature_columns + ['Target'])
-    
-    features = stock_data[feature_columns]
-    target = stock_data['Target']
-    
-    # Check if there is enough data for train_test_split
-    if len(features) < 5:  # Adjust threshold based on minimum requirement for train_test_split
-        st.write("Not enough data available for prediction within the selected date range and indicator settings.")
-    else:
-        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
-        model = train_model(X_train, y_train)
-        accuracy = model.score(X_test, y_test)
-        
-        st.write(f"Prediction Model Accuracy: {accuracy:.2%}")
-
-if __name__ == "__main__":
-    main()
+    stock_data['Target'] = np.where(stock_data['Close'].shift
