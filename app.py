@@ -185,4 +185,4 @@ def main():
         st.write("Not enough data available for prediction within the specified date range.")
     else:
         # Split the data into training and testing sets
-        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2)
