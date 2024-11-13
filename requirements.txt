@@ -4,4 +4,6 @@ pandas
 numpy
 plotly
 wikipedia-api
+wikipediaapi
 scikit-learn
+sklearn
