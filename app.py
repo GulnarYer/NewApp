@@ -1,10 +1,3 @@
-It looks like the code is incomplete or was accidentally cut off, particularly in the `Prediction Model` section. I'll fix the syntax error and provide the full updated code.
-
-The issue seems to be that the `np.where` statement in the prediction model is not properly closed. I'll correct that and give you the complete version of the code with the necessary updates.
-
-Here is the full corrected code:
-
-```python
 import streamlit as st
 import yfinance as yf
 import pandas as pd
