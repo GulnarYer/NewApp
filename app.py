@@ -181,4 +181,5 @@ def main():
     target = stock_data['Target']
     
     # Check if there is enough data for train_test_split
-    if len(features) < 5:  # Adjust threshold based on
+    if len(features) < 5:  # Adjust threshold based on minimum requirement for train_test_split
+        st.write("Not enough data available for prediction within the
