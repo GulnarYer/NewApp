@@ -182,4 +182,7 @@ def main():
     
     # Check if there is enough data for train_test_split
     if len(features) < 5:  # Adjust threshold based on minimum requirement for train_test_split
-        st.write("Not enough data available for prediction within the
+        st.write("Not enough data available for prediction within the specified date range.")
+    else:
+        # Split the data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2
